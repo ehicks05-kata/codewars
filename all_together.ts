@@ -1,7 +1,122 @@
-import { dropPeopleOff, letPeopleIn } from "./app/at_rest_behaviors";
-import { getNextFloorInCurrentDirection } from "./app/navigation";
-import { Person, Direction } from "./app/types";
-import { initPeople, inLift, log } from "./app/utils";
+export type Direction = "up" | "down";
+export type Location = number | "lift" | "destination";
+
+export interface Person {
+  destination: number;
+  direction: Direction;
+  location: Location;
+  queuePosition?: number;
+}
+
+export const initPeople = (queues: number[][]) => {
+  const people: Person[] = [];
+  queues.forEach((queue, floorIndex) =>
+    queue.forEach((destination, queueIndex) =>
+      people.push({
+        location: floorIndex,
+        destination,
+        direction: destination > floorIndex ? "up" : "down",
+        queuePosition: queueIndex,
+      })
+    )
+  );
+  return people;
+};
+
+export const log = (
+  direction: Direction,
+  history: number[],
+  people: Person[],
+  finishedPeople: Person[]
+) => {
+  const lift = { direction, history: history.join(",") };
+  console.table(
+    [...people, ...finishedPeople].map((o) => ({
+      ...o,
+      lift: JSON.stringify(lift),
+    }))
+  );
+};
+
+export const inLift = (persons: Person[]) =>
+  persons.filter((o) => o.location === "lift");
+
+export const letPeopleIn = (
+  people: Person[],
+  capacity: number,
+  floor: number,
+  direction: Direction
+): Person[] => {
+  let remainingCapacity = capacity - inLift(people).length;
+  if (remainingCapacity !== 0) {
+    return people.map((o) => {
+      if (o.location !== floor || o.direction !== direction) return o;
+
+      if (remainingCapacity === 0) return o;
+      remainingCapacity -= 1;
+
+      return { ...o, location: "lift" };
+    });
+  }
+  return people;
+};
+
+export const dropPeopleOff = (
+  people: Person[],
+  finishedPeople: Person[],
+  floor: number
+) => {
+  const shouldBeDroppedOff = (o: Person) =>
+    o.location === "lift" && o.destination === floor;
+  finishedPeople.push(
+    ...people
+      .filter(shouldBeDroppedOff)
+      .map((o) => ({ ...o, location: "destination" as Location }))
+  );
+  return people.filter((o) => !shouldBeDroppedOff(o));
+};
+
+const isOnTheWay = (floor: number, direction: Direction, destination: number) =>
+  direction === "up" ? destination > floor : destination < floor;
+
+export const getNextFloorInCurrentDirection = (
+  people: Person[],
+  floor: number,
+  direction: Direction
+) => {
+  const peopleToDropOff = people
+    .filter((o) => o.location === "lift")
+    .filter((o) => isOnTheWay(floor, direction, o.destination));
+  const nextDropOffFloor =
+    peopleToDropOff.length === 0
+      ? -1
+      : direction === "up"
+      ? Math.min(...peopleToDropOff.map((o) => o.destination))
+      : Math.max(...peopleToDropOff.map((o) => o.destination));
+
+  const peopleToPickUp = people
+    .filter((o) => o.location !== "lift")
+    .filter((o) => isOnTheWay(floor, direction, o.location as number))
+    .filter((o) => isOnTheWay(floor, direction, o.destination))
+    .filter((o) => o.direction === direction);
+
+  const nextPickUpFloor =
+    peopleToPickUp.length === 0
+      ? -1
+      : direction === "up"
+      ? Math.min(...peopleToPickUp.map((o) => o.location as number))
+      : Math.max(...peopleToPickUp.map((o) => o.location as number));
+
+  if (nextDropOffFloor !== -1 || nextPickUpFloor !== -1) {
+    const validFloors = [nextDropOffFloor, nextPickUpFloor].filter(
+      (o) => o !== -1
+    );
+    const nextFloor =
+      direction === "up" ? Math.min(...validFloors) : Math.max(...validFloors);
+    return nextFloor;
+  }
+  return -1;
+};
 
 export const theLift = (queues: number[][], capacity: number): number[] => {
   let people = initPeople(queues);
