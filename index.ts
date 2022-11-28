@@ -102,5 +102,6 @@ export const theLift = (queues: number[][], capacity: number): number[] => {
   }
 
   if (history[history.length - 1] !== 0) history.push(0);
+  console.log({ queues, capacity, history: history.join(", ") });
   return history;
 };

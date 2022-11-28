@@ -1,14 +1,14 @@
-export type Direction = "up" | "down";
-export type Location = number | "lift" | "destination";
+type Direction = "up" | "down";
+type Location = number | "lift" | "destination";
 
-export interface Person {
+interface Person {
   destination: number;
   direction: Direction;
   location: Location;
   queuePosition?: number;
 }
 
-export const initPeople = (queues: number[][]) => {
+const initPeople = (queues: number[][]) => {
   const people: Person[] = [];
   queues.forEach((queue, floorIndex) =>
     queue.forEach((destination, queueIndex) =>
@@ -23,25 +23,25 @@ export const initPeople = (queues: number[][]) => {
   return people;
 };
 
-export const log = (
+const log = (
   direction: Direction,
   history: number[],
   people: Person[],
   finishedPeople: Person[]
 ) => {
   const lift = { direction, history: history.join(",") };
-  console.table(
-    [...people, ...finishedPeople].map((o) => ({
-      ...o,
-      lift: JSON.stringify(lift),
-    }))
-  );
+  // console.table(
+  //   [...people, ...finishedPeople].map((o) => ({
+  //     ...o,
+  //     lift: JSON.stringify(lift),
+  //   }))
+  // );
 };
 
-export const inLift = (persons: Person[]) =>
+const inLift = (persons: Person[]) =>
   persons.filter((o) => o.location === "lift");
 
-export const letPeopleIn = (
+const letPeopleIn = (
   people: Person[],
   capacity: number,
   floor: number,
@@ -61,7 +61,7 @@ export const letPeopleIn = (
   return people;
 };
 
-export const dropPeopleOff = (
+const dropPeopleOff = (
   people: Person[],
   finishedPeople: Person[],
   floor: number
@@ -79,7 +79,7 @@ export const dropPeopleOff = (
 const isOnTheWay = (floor: number, direction: Direction, destination: number) =>
   direction === "up" ? destination > floor : destination < floor;
 
-export const getNextFloorInCurrentDirection = (
+const getNextFloorInCurrentDirection = (
   people: Person[],
   floor: number,
   direction: Direction
@@ -124,11 +124,11 @@ export const theLift = (queues: number[][], capacity: number): number[] => {
   let direction: Direction = "up";
   const history = [0];
 
-  console.log(`capacity is ${capacity}`);
+  // console.log(`capacity is ${capacity}`);
 
   let i = 0;
   while (people.length !== 0) {
-    console.log("start of round " + i++);
+    // console.log("start of round " + i++);
     log(direction, history, people, finishedPeople);
 
     const floor = history[history.length - 1];
@@ -143,7 +143,7 @@ export const theLift = (queues: number[][], capacity: number): number[] => {
     // find closest floor in our direction that someone wants to leave to, or join from.
     const nextFloor = getNextFloorInCurrentDirection(people, floor, direction);
     if (nextFloor !== -1) {
-      console.log("NEXT FLOOR method 1");
+      // console.log("NEXT FLOOR method 1");
       history.push(nextFloor);
       log(direction, history, people, finishedPeople);
       continue;
@@ -171,7 +171,7 @@ export const theLift = (queues: number[][], capacity: number): number[] => {
               .map((o) => o.location as number)[0];
 
       if (nextFloor === floor) {
-        console.log("NEXT FLOOR method 2a");
+        // console.log("NEXT FLOOR method 2a");
         // change direction
         direction = direction === "up" ? "down" : "up";
 
@@ -190,7 +190,7 @@ export const theLift = (queues: number[][], capacity: number): number[] => {
       }
 
       if (nextFloor || nextFloor === 0) {
-        console.log("NEXT FLOOR method 2");
+        // console.log("NEXT FLOOR method 2");
         direction = direction === "up" ? "down" : "up";
 
         // if we've changed direction, new folks may want on
@@ -209,7 +209,7 @@ export const theLift = (queues: number[][], capacity: number): number[] => {
 
     const nextFloor2 = getNextFloorInCurrentDirection(people, floor, direction);
     if (nextFloor !== -1) {
-      console.log("NEXT FLOOR method 3");
+      // console.log("NEXT FLOOR method 3");
       history.push(nextFloor2);
       log(direction, history, people, finishedPeople);
       continue;
@@ -217,5 +217,6 @@ export const theLift = (queues: number[][], capacity: number): number[] => {
   }
 
   if (history[history.length - 1] !== 0) history.push(0);
+  console.log({ queues, capacity, history: history.join(", ") });
   return history;
 };
